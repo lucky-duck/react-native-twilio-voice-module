@@ -21,7 +21,7 @@ Pod::Spec.new do |s|
 
   s.dependency "React"
   s.dependency 'AFNetworking', '~> 3.0'
-  s.dependency 'TwilioVoice', '~> 4.1'
+  s.dependency 'TwilioVoice', '~> 5.1'
   # s.dependency "..."
 end
 

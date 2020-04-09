@@ -1,6 +1,7 @@
 #import "TwilioVoiceModule.h"
 
 #import <AFNetworking/AFNetworking.h>
+#import <CallKit/CallKit.h>
 @import PushKit;
 @import TwilioVoice;
 
@@ -17,11 +18,13 @@ API_AVAILABLE(ios(8.0))
 @property (nonatomic, strong) TVOCall *call;
 @property (nonatomic, strong) PKPushRegistry *voipRegistry;
 @property (nonatomic, strong) TVOCallInvite *callInvite;
+@property (nonatomic, strong) CXProvider *callKitProvider;
+@property (nonatomic, strong) CXCallController *callKitCallController;
 @end
 
 @implementation TwilioVoiceModule {
     NSString* _accessToken;
-    NSString* _deviceToken;
+    NSMutableString* _deviceToken;
     bool _hasListeners;
 }
 
@@ -36,6 +39,20 @@ RCT_EXPORT_MODULE()
 // Will be called when this module's first listener is added.
 -(void)startObserving {
     _hasListeners = YES;
+    [self configureCallKit];
+}
+
+- (void)configureCallKit {
+    CXProviderConfiguration *configuration = [[CXProviderConfiguration alloc] initWithLocalizedName:@"Quickstart"];
+    configuration.maximumCallGroups = 1;
+    configuration.maximumCallsPerCallGroup = 1;
+    UIImage *callkitIcon = [UIImage imageNamed:@"iconMask80"];
+    configuration.iconTemplateImageData = UIImagePNGRepresentation(callkitIcon);
+
+    _callKitProvider = [[CXProvider alloc] initWithConfiguration:configuration];
+    [_callKitProvider setDelegate:self queue:nil];
+
+    _callKitCallController = [[CXCallController alloc] init];
 }
 
 // Will be called when this module's last listener is removed, or on dealloc.
@@ -57,13 +74,14 @@ RCT_EXPORT_MODULE()
     return accessToken;
 }
 
-RCT_EXPORT_METHOD(initWithToken:(NSString *)token resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject)
+RCT_EXPORT_METHOD(initWithToken:(NSString *)token withId:(NSString *)_userIdentity resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject)
 {
     if ([token isEqualToString:@""]) {
         reject(@"400", @"Invalid token detected", nil);
         return;
     }
-    
+    [[NSUserDefaults standardUserDefaults] setObject:_userIdentity forKey:@"kIdentity"];
+    [[NSUserDefaults standardUserDefaults] synchronize];
     if (![self checkRecordPermission]) {
         [self requestRecordPermission:^(BOOL granted) {
             if (!granted) {
@@ -79,11 +97,13 @@ RCT_EXPORT_METHOD(initWithToken:(NSString *)token resolver:(RCTPromiseResolveBlo
         _accessToken = token;
         resolve(@{@"initialized": @true});
     }
-    
 }
 
 RCT_EXPORT_METHOD(connect:(NSDictionary *)params)
 {
+    if (!_accessToken) {
+        return;
+    }
     if (self.call && self.call.state == TVOCallStateConnected) {
         [self.call disconnect];
     } else {
@@ -150,7 +170,7 @@ RCT_EXPORT_METHOD(getActiveCall:(RCTPromiseResolveBlock)resolve rejecter:(RCTPro
 RCT_EXPORT_METHOD(accept)
 {
     if (self.callInvite) {
-        [self.callInvite acceptWithDelegate:self];
+        self.call = [self.callInvite acceptWithDelegate:self];
     }
 }
 
@@ -177,6 +197,9 @@ RCT_EXPORT_METHOD(reject)
 - (NSMutableDictionary *)paramsForCall:(TVOCall *)call
 {
     NSMutableDictionary *callParams = [[NSMutableDictionary alloc] init];
+    if (call == nil) {
+        return callParams;
+    }
     [callParams setObject:call.sid forKey:@"call_sid"];
     if (call.state == TVOCallStateConnecting) {
         [callParams setObject:StateConnecting forKey:@"call_state"];
@@ -189,21 +212,21 @@ RCT_EXPORT_METHOD(reject)
     } else if (call.state == TVOCallStateDisconnected) {
         [callParams setObject:StateDisconnected forKey:@"call_state"];
     }
-    
+
     if (call.from) {
         [callParams setObject:call.from forKey:@"call_from"];
     }
     if (call.to) {
         [callParams setObject:call.to forKey:@"call_to"];
     }
-    
+
     return callParams;
 }
 
 
 - (NSMutableDictionary *)paramsForError:(NSError *)error {
     NSMutableDictionary *params = [self paramsForCall:self.call];
-    
+
     if (error) {
         NSMutableDictionary *errorParams = [[NSMutableDictionary alloc] init];
         if (error.code) {
@@ -288,7 +311,12 @@ RCT_EXPORT_METHOD(reject)
 - (void)pushRegistry:(nonnull PKPushRegistry *)registry didUpdatePushCredentials:(nonnull PKPushCredentials *)pushCredentials forType:(nonnull PKPushType)type
 {
     if ([type isEqualToString:PKPushTypeVoIP]) {
-        _deviceToken = pushCredentials.token.description;
+        const char *tokenBytes = [pushCredentials.token bytes];
+        _deviceToken = [NSMutableString string];
+        for (NSUInteger i = 0; i < [pushCredentials.token length]; ++i) {
+            [_deviceToken appendFormat:@"%02.2hhx", tokenBytes[i]];
+        }
+        // _deviceToken = pushCredentials.token.description;
         if (_accessToken && _deviceToken) {
             [TwilioVoice registerWithAccessToken:_accessToken deviceToken:_deviceToken completion:^(NSError * _Nullable error) {
                 if (error) {
@@ -320,16 +348,43 @@ RCT_EXPORT_METHOD(reject)
 - (void)pushRegistry:(PKPushRegistry *)registry didReceiveIncomingPushWithPayload:(PKPushPayload *)payload forType:(PKPushType)type withCompletionHandler:(void(^)(void))completion
 {
     if ([type isEqualToString:PKPushTypeVoIP]) {
-        [TwilioVoice handleNotification:payload.dictionaryPayload delegate:self];
+        [TwilioVoice handleNotification:payload.dictionaryPayload delegate:self delegateQueue:nil];
         completion();
     }
+
+    if ([payload.dictionaryPayload[@"twi_message_type"] isEqualToString:@"twilio.voice.cancel"]) {
+        CXHandle *callHandle = [[CXHandle alloc] initWithType:CXHandleTypeGeneric value:@"alice"];
+
+        CXCallUpdate *callUpdate = [[CXCallUpdate alloc] init];
+        callUpdate.remoteHandle = callHandle;
+        callUpdate.supportsDTMF = YES;
+        callUpdate.supportsHolding = YES;
+        callUpdate.supportsGrouping = NO;
+        callUpdate.supportsUngrouping = NO;
+        callUpdate.hasVideo = NO;
+
+        NSUUID *uuid = [NSUUID UUID];
+
+        [self.callKitProvider reportNewIncomingCallWithUUID:uuid update:callUpdate completion:^(NSError *error) {
+        }];
+
+        dispatch_async(dispatch_get_main_queue(), ^{
+            CXEndCallAction *endCallAction = [[CXEndCallAction alloc] initWithCallUUID:uuid];
+            CXTransaction *transaction = [[CXTransaction alloc] initWithAction:endCallAction];
+
+            [self.callKitCallController requestTransaction:transaction completion:^(NSError *error) {
+            }];
+        });
+
+    }
+
 }
 
 // deprecated for iOS 8 ~ iOS 11
 - (void)pushRegistry:(PKPushRegistry *)registry didReceiveIncomingPushWithPayload:(PKPushPayload *)payload forType:(PKPushType)type
 {
     if ([type isEqualToString:PKPushTypeVoIP]) {
-        [TwilioVoice handleNotification:payload.dictionaryPayload delegate:self];
+        [TwilioVoice handleNotification:payload.dictionaryPayload delegate:self delegateQueue:nil];
     }
 }
 

@@ -1,10 +1,6 @@
-import {
-  NativeModules,
-  NativeEventEmitter,
-  Platform
-} from 'react-native';
+import {NativeModules, NativeEventEmitter, Platform} from 'react-native';
 
-const { TwilioVoiceModule } = NativeModules;
+const {TwilioVoiceModule} = NativeModules;
 
 const _eventEmitter = new NativeEventEmitter(TwilioVoiceModule);
 
@@ -18,18 +14,18 @@ const _eventHandlers = {
   connectionDidFailed: new Map(),
   connectionDidRinging: new Map(),
   connectionDidReconnecting: new Map(),
-  connectionDidReconnect: new Map()
-}
+  connectionDidReconnect: new Map(),
+};
 
 const Twilio = {
-  initWithToken(token) {
+  initWithToken(token, userId) {
     if (typeof token !== 'string') {
       return {
         initialized: false,
-        err: 'Invalid token, token must be a string'
-      }
+        err: 'Invalid token, token must be a string',
+      };
     }
-    return TwilioVoiceModule.initWithToken(token);
+    return TwilioVoiceModule.initWithToken(token, userId);
   },
 
   connect(params = {}) {
@@ -68,7 +64,12 @@ const Twilio = {
     if (_eventHandlers[type].has(handler)) {
       return;
     }
-    _eventHandlers[type].set(handler, _eventEmitter.addListener(type, rtn => { handler(rtn) }));
+    _eventHandlers[type].set(
+      handler,
+      _eventEmitter.addListener(type, rtn => {
+        handler(rtn);
+      }),
+    );
   },
 
   removeEventListener(type, handler) {
@@ -77,7 +78,7 @@ const Twilio = {
     }
     _eventHandlers[type].get(handler).remove();
     _eventHandlers[type].delete(handler);
-  }
-}
+  },
+};
 
 export default Twilio;
