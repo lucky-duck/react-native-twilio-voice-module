@@ -5,6 +5,8 @@ const {TwilioVoiceModule} = NativeModules;
 const _eventEmitter = new NativeEventEmitter(TwilioVoiceModule);
 
 const _eventHandlers = {
+  callAccepted: new Map(),
+  callRejected: new Map(),
   callIncoming: new Map(),
   callIncomingCancelled: new Map(),
   deviceRegistered: new Map(),
