@@ -36,6 +36,7 @@ API_AVAILABLE(ios(8.0))
     bool _hasListeners;
     NSTimer *TimeOfAccept;
     NSTimer *TimeOfReject;
+    NSUUID *callKitUUID;
     int acceptTimerCount;
     int rejectTimerCount;
     NSMutableDictionary *acceptTimerParams;
@@ -289,6 +290,18 @@ RCT_EXPORT_METHOD(reject)
     NSMutableDictionary *params = [self paramsForError:error];
     NSLog(@"An error occurred while connectionDidDisconnect: %@", error);
     [self sendEvent:@"connectionDidDisconnect" eventBody:params];
+
+    if (@available(iOS 10.0, *) && self->callKitUUID) {
+        dispatch_time_t delay = dispatch_time(DISPATCH_TIME_NOW, NSEC_PER_SEC * 1);
+        dispatch_after(delay, dispatch_get_main_queue(), ^(void){
+            CXEndCallAction *endCallAction = [[CXEndCallAction alloc] initWithCallUUID:self->callKitUUID];
+            CXTransaction *transaction = [[CXTransaction alloc] initWithAction:endCallAction];
+
+            [self.callKitCallController requestTransaction:transaction completion:^(NSError *error) {
+                self->callKitUUID = nil;
+            }];
+        });
+    }
     if (self->_call && self->_call.sid == call.sid) {
         self->_call = nil;
     }
@@ -299,6 +312,17 @@ RCT_EXPORT_METHOD(reject)
     [UIDevice currentDevice].proximityMonitoringEnabled = NO;
     NSMutableDictionary *params = [self paramsForError:error];
     [self sendEvent:@"connectionDidFailed" eventBody:params];
+    if (@available(iOS 10.0, *) && self->callKitUUID) {
+        dispatch_time_t delay = dispatch_time(DISPATCH_TIME_NOW, NSEC_PER_SEC * 1);
+        dispatch_after(delay, dispatch_get_main_queue(), ^(void){
+            CXEndCallAction *endCallAction = [[CXEndCallAction alloc] initWithCallUUID:self->callKitUUID];
+            CXTransaction *transaction = [[CXTransaction alloc] initWithAction:endCallAction];
+
+            [self.callKitCallController requestTransaction:transaction completion:^(NSError *error) {
+                self->callKitUUID = nil;
+            }];
+        });
+    }
     if (self->_call && self->_call.sid == call.sid) {
         self->_call = nil;
     }
@@ -352,7 +376,7 @@ RCT_EXPORT_METHOD(reject)
             CXHandle *callHandle = [[CXHandle alloc] initWithType:CXHandleTypeGeneric value:handle];
             callUpdate.remoteHandle = callHandle;
             callUpdate.supportsDTMF = YES;
-            callUpdate.supportsHolding = YES;
+            callUpdate.supportsHolding = NO;
             callUpdate.supportsGrouping = NO;
             callUpdate.supportsUngrouping = NO;
             callUpdate.hasVideo = NO;
@@ -410,7 +434,7 @@ RCT_EXPORT_METHOD(reject)
             CXHandle *callHandle = [[CXHandle alloc] initWithType:CXHandleTypeGeneric value:handle];
             callUpdate.remoteHandle = callHandle;
             callUpdate.supportsDTMF = YES;
-            callUpdate.supportsHolding = YES;
+            callUpdate.supportsHolding = NO;
             callUpdate.supportsGrouping = NO;
             callUpdate.supportsUngrouping = NO;
             callUpdate.hasVideo = NO;
@@ -576,16 +600,8 @@ RCT_EXPORT_METHOD(reject)
         }
         self->_callInvite = nil;
     }
-
     if (@available(iOS 10.0, *)) {
-        dispatch_time_t delay = dispatch_time(DISPATCH_TIME_NOW, NSEC_PER_SEC * 5);
-        dispatch_after(delay, dispatch_get_main_queue(), ^(void){
-            CXEndCallAction *endCallAction = [[CXEndCallAction alloc] initWithCallUUID:action.callUUID];
-            CXTransaction *transaction = [[CXTransaction alloc] initWithAction:endCallAction];
-
-            [self.callKitCallController requestTransaction:transaction completion:^(NSError *error) {
-            }];
-        });
+        self->callKitUUID = action.callUUID;
     }
     [action fulfill];
 }
