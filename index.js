@@ -46,8 +46,16 @@ const Twilio = {
     TwilioVoiceModule.setSpeakerPhone(isSpeaker);
   },
 
+  setInputMode(inputUid) {
+    TwilioVoiceModule.setInputMode(inputUid);
+  },
+
   getVersion(callback) {
     TwilioVoiceModule.getVersion(callback);
+  },
+
+  getAvailableAudioPorts(callback) {
+    TwilioVoiceModule.getAvailableAudioPorts(callback);
   },
 
   getActiveCall() {

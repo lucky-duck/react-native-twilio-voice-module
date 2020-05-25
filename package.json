@@ -1,18 +1,39 @@
 {
-  "name": "react-native-twilio-voice-module",
-  "version": "1.0.12",
+  "_from": "github:lucky-duck/react-native-twilio-voice-module#1.0.2",
+  "_id": "react-native-twilio-voice-module@1.0.12",
+  "_inBundle": false,
+  "_integrity": "",
+  "_location": "/react-native-twilio-voice-module",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "git",
+    "raw": "react-native-twilio-voice-module@github:lucky-duck/react-native-twilio-voice-module#1.0.2",
+    "name": "react-native-twilio-voice-module",
+    "escapedName": "react-native-twilio-voice-module",
+    "rawSpec": "github:lucky-duck/react-native-twilio-voice-module#1.0.2",
+    "saveSpec": "github:lucky-duck/react-native-twilio-voice-module#1.0.2",
+    "fetchSpec": null,
+    "gitCommittish": "1.0.2"
+  },
+  "_requiredBy": [
+    "/"
+  ],
+  "_resolved": "github:lucky-duck/react-native-twilio-voice-module#7366be1a5c44f7041ba25681621456817937c4ad",
+  "_spec": "react-native-twilio-voice-module@github:lucky-duck/react-native-twilio-voice-module#1.0.2",
+  "_where": "/Volumes/Work/ReactNative/Anyone/AnyoneMobile",
+  "author": {
+    "name": "HaiLin Yin"
+  },
+  "bugs": {
+    "url": "https://github.com/danielsGit/react-native-twilio-voice-module/issues"
+  },
+  "bundleDependencies": false,
+  "deprecated": false,
   "description": "Twilio programmable voice module for react native",
-  "main": "index.js",
   "directories": {
     "example": "example"
   },
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/danielsGit/react-native-twilio-voice-module.git"
-  },
+  "homepage": "https://github.com/danielsGit/react-native-twilio-voice-module#readme",
   "keywords": [
     "react",
     "native",
@@ -22,13 +43,15 @@
     "module",
     "call"
   ],
-  "author": {
-    "username": "hailin_yin",
-    "name": "HaiLin Yin"
-  },
   "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/danielsGit/react-native-twilio-voice-module/issues"
+  "main": "index.js",
+  "name": "react-native-twilio-voice-module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danielsGit/react-native-twilio-voice-module.git"
   },
-  "homepage": "https://github.com/danielsGit/react-native-twilio-voice-module#readme"
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "version": "1.0.12"
 }

@@ -166,6 +166,36 @@ RCT_EXPORT_METHOD(setMuted:(BOOL)isMuted)
     }
 }
 
+RCT_EXPORT_METHOD(getAvailableAudioPorts:(RCTResponseSenderBlock)callback)
+{
+//    AVAudioSessionRouteDescription
+    NSMutableArray *availablePorts = [[NSMutableArray alloc] init];
+    for (id individualInput in [[AVAudioSession sharedInstance] availableInputs]) {
+        // do something with object
+        [availablePorts addObject:@{@"portName": [individualInput portName], @"portType": [individualInput portType], @"UID": [individualInput UID]}];
+    }
+    
+    NSMutableArray *currentPorts = [[NSMutableArray alloc] init];
+    for (id individualInput in [[[AVAudioSession sharedInstance] currentRoute] inputs]) {
+        // do something with object
+        [currentPorts addObject:@{@"portName": [individualInput portName], @"portType": [individualInput portType], @"UID": [individualInput UID]}];
+    }
+    callback(@[availablePorts, currentPorts]);
+}
+
+RCT_EXPORT_METHOD(setInputMode:(NSString *)inputUid)
+{
+//    AVAudioSessionRouteDescription
+    NSError *error = nil;
+    NSPredicate *predicate = [NSPredicate predicateWithFormat:@"UID == %@", @"Built-In Microphone"];
+    NSArray *filteredArray = [[[AVAudioSession sharedInstance] availableInputs] filteredArrayUsingPredicate:predicate];
+    if ([filteredArray count] > 0) {
+        if (![[AVAudioSession sharedInstance] setPreferredInput:[filteredArray firstObject] error:&error]) {
+            NSLog(@"Switch Media Input error: %@", [error localizedDescription]);
+        }
+    }
+}
+
 RCT_EXPORT_METHOD(setSpeakerPhone:(BOOL)isSpeaker)
 {
     NSError *error = nil;
