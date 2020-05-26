@@ -187,7 +187,7 @@ RCT_EXPORT_METHOD(setInputMode:(NSString *)inputUid)
 {
 //    AVAudioSessionRouteDescription
     NSError *error = nil;
-    NSPredicate *predicate = [NSPredicate predicateWithFormat:@"UID == %@", @"Built-In Microphone"];
+    NSPredicate *predicate = [NSPredicate predicateWithFormat:@"UID == %@", inputUid];
     NSArray *filteredArray = [[[AVAudioSession sharedInstance] availableInputs] filteredArrayUsingPredicate:predicate];
     if ([filteredArray count] > 0) {
         if (![[AVAudioSession sharedInstance] setPreferredInput:[filteredArray firstObject] error:&error]) {
