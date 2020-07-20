@@ -1,21 +1,28 @@
 package com.twiliovoicemodule;
 
 import android.Manifest;
+import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.media.AudioAttributes;
 import android.media.AudioFocusRequest;
 import android.media.AudioManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
-import android.support.v4.content.LocalBroadcastManager;
+import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.lifecycle.Lifecycle;
+import androidx.lifecycle.ProcessLifecycleOwner;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import android.util.Log;
+import android.view.Window;
+import android.view.WindowManager;
 
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.AssertionException;
@@ -34,9 +41,11 @@ import com.facebook.react.modules.core.DeviceEventManagerModule;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.InstanceIdResult;
+import com.koushikdutta.ion.Ion;
 import com.twilio.voice.Call;
 import com.twilio.voice.CallException;
 import com.twilio.voice.CallInvite;
@@ -59,6 +68,8 @@ import static com.twiliovoicemodule.fcm.VoiceCallFCMService.ACTION_INCOMING_CALL
 public class TwilioVoiceModuleModule extends ReactContextBaseJavaModule implements LifecycleEventListener {
     private final ReactApplicationContext reactContext;
     private String accessToken = "";
+    private String identity = "";
+    private int activeCallNotificationId;
     private HashMap<String, String> twiMLParams = new HashMap<>();
     private static final String DEVICE_REGISTERED = "deviceRegistered";
     private static final String DEVICE_NOT_REGISTERED = "deviceNotRegistered";
@@ -71,6 +82,9 @@ public class TwilioVoiceModuleModule extends ReactContextBaseJavaModule implemen
     private static final String CALL_INCOMING = "callIncoming";
     private static final String CALL_INCOMING_CANCELLED = "callIncomingCancelled";
     private static final int MIC_PERMISSION_REQUEST_CODE = 100;
+    private static final String TAG = "Anyone";
+    private static final String TWILIO_ACCESS_TOKEN_SERVER_URL = "https://tomato-reindeer-1763.twil.io/access-token";
+    private AlertDialog alertDialog;
     private Call call;
     private AudioManager audioManager;
     private AudioFocusRequest focusRequest;
@@ -83,6 +97,7 @@ public class TwilioVoiceModuleModule extends ReactContextBaseJavaModule implemen
 
     public TwilioVoiceModuleModule(ReactApplicationContext reactContext) {
         super(reactContext);
+
         this.reactContext = reactContext;
         proximityManager = new ProximityManager(reactContext);
         this.reactContext.addLifecycleEventListener(this);
@@ -90,6 +105,12 @@ public class TwilioVoiceModuleModule extends ReactContextBaseJavaModule implemen
         tokenReceiver = new TokenRefreshedBroadcastReceiver();
         callReceiver = new VoiceCallBroadcastReceiver();
         registerReceivers();
+
+        if (!checkPermissionForMicrophone()) {
+            requestMicrophonePermission();
+        } else {
+            retrieveAccessToken();
+        }
     }
 
     @Override
@@ -117,26 +138,25 @@ public class TwilioVoiceModuleModule extends ReactContextBaseJavaModule implemen
     }
 
     @ReactMethod
-    public void initWithToken(String token, Promise promise) {
+    public void initWithToken(String token, String userId, Promise promise) {
         if (token.isEmpty()) {
             promise.reject(new JSApplicationIllegalArgumentException("Invalid token provided"));
             return;
         }
-        if (!checkMicrophonePermission()) {
+        if (!checkPermissionForMicrophone()) {
             requestMicrophonePermission();
             promise.reject(new AssertionException("Microphone permission required"));
             return;
         }
+
+        SharedPreferences preferences = reactContext.getSharedPreferences("TwilioModule", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = preferences.edit();
+        String currentIdentity = preferences.getString("identity", "testUser");
         registerForCallInvites();
         this.accessToken = token;
         WritableMap params = Arguments.createMap();
         params.putBoolean("initialized", true);
         promise.resolve(params);
-    }
-
-    private boolean checkMicrophonePermission() {
-        return ContextCompat.checkSelfPermission(reactContext, Manifest.permission.RECORD_AUDIO) ==
-                PackageManager.PERMISSION_GRANTED;
     }
 
     @ReactMethod
@@ -333,7 +353,7 @@ public class TwilioVoiceModuleModule extends ReactContextBaseJavaModule implemen
         }
 
         @Override
-        public void onDisconnected(@NonNull Call call, @android.support.annotation.Nullable CallException callException) {
+        public void onDisconnected(@NonNull Call call, @androidx.annotation.Nullable CallException callException) {
             unsetAudioFocus();
             proximityManager.stopProximityDetector();
             TwilioVoiceModuleModule.this.call = null;
@@ -395,6 +415,11 @@ public class TwilioVoiceModuleModule extends ReactContextBaseJavaModule implemen
 
     private void sendEvent(String eventName, @Nullable WritableMap params) {
         reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class).emit(eventName, params);
+    }
+
+    private boolean checkPermissionForMicrophone() {
+        int resultMic = ActivityCompat.checkSelfPermission(reactContext, Manifest.permission.RECORD_AUDIO);
+        return resultMic == PackageManager.PERMISSION_GRANTED;
     }
 
     private void requestMicrophonePermission() {
@@ -465,5 +490,90 @@ public class TwilioVoiceModuleModule extends ReactContextBaseJavaModule implemen
                 sendEvent(CALL_INCOMING_CANCELLED, params);
             }
         }
+    }
+
+
+    /*
+     * Accept an incoming Call
+     */
+    private void answer() {
+        incomingCall.accept(reactContext, callListener);
+    }
+
+    public static AlertDialog createIncomingCallDialog(
+            Context context,
+            CallInvite callInvite,
+            DialogInterface.OnClickListener answerCallClickListener,
+            DialogInterface.OnClickListener cancelClickListener) {
+        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(context);
+        alertDialogBuilder.setIcon(R.drawable.ic_call_black_24dp);
+        alertDialogBuilder.setTitle("Incoming Call");
+        alertDialogBuilder.setPositiveButton("Accept", answerCallClickListener);
+        alertDialogBuilder.setNegativeButton("Reject", cancelClickListener);
+        alertDialogBuilder.setMessage(callInvite.getFrom() + " is calling.");
+        return alertDialogBuilder.create();
+    }
+
+    private DialogInterface.OnClickListener answerCallClickListener() {
+        return (dialog, which) -> {
+            Log.d(TAG, "Clicked accept");
+            Intent acceptIntent = new Intent(reactContext, IncomingCallNotificationService.class);
+            acceptIntent.setAction(Constants.ACTION_ACCEPT);
+            acceptIntent.putExtra(Constants.INCOMING_CALL_INVITE, incomingCall);
+            acceptIntent.putExtra(Constants.INCOMING_CALL_NOTIFICATION_ID, activeCallNotificationId);
+            Log.d(TAG, "Clicked accept startService");
+            reactContext.startService(acceptIntent);
+        };
+    }
+
+    private DialogInterface.OnClickListener cancelCallClickListener() {
+        return (dialogInterface, i) -> {
+            if (incomingCall != null) {
+                Intent intent = new Intent(reactContext, IncomingCallNotificationService.class);
+                intent.setAction(Constants.ACTION_REJECT);
+                intent.putExtra(Constants.INCOMING_CALL_INVITE, incomingCall);
+                reactContext.startService(intent);
+            }
+            if (alertDialog != null && alertDialog.isShowing()) {
+                alertDialog.dismiss();
+            }
+        };
+    }
+    private void showIncomingCallDialog() {
+        if (incomingCall != null) {
+            alertDialog = createIncomingCallDialog(getCurrentActivity(),
+                    incomingCall,
+                    answerCallClickListener(),
+                    cancelCallClickListener());
+            alertDialog.show();
+        }
+    }
+
+    private boolean isAppVisible() {
+        return ProcessLifecycleOwner
+                .get()
+                .getLifecycle()
+                .getCurrentState()
+                .isAtLeast(Lifecycle.State.STARTED);
+    }
+
+    /*
+     * Get an access token from your Twilio access token server
+     */
+    private void retrieveAccessToken() {
+        SharedPreferences preferences = reactContext.getSharedPreferences("TwilioModule", Context.MODE_PRIVATE);
+        String currentIdentity = preferences.getString("identity", "testUser");
+
+        Log.d(TAG, "Android Twilio Identity " + currentIdentity);
+        Ion.with(reactContext).load(TWILIO_ACCESS_TOKEN_SERVER_URL + "?identity=" + currentIdentity)
+                .asString()
+                .setCallback((e, accessToken) -> {
+                    if (e == null) {
+                        Log.d(TAG, "Android Access token: " + accessToken);
+                        this.accessToken = accessToken;
+                        registerForCallInvites();
+                    } else {
+                    }
+                });
     }
 }
