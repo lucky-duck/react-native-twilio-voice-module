@@ -23,9 +23,6 @@ import com.twiliovoicemodule.IncomingCallNotificationService;
 import java.util.Map;
 
 public class VoiceCallFCMService extends FirebaseMessagingService {
-    public static final String ACTION_FCM_TOKEN_REFRESHED = "fcmTokenRefreshed";
-    public static final String ACTION_INCOMING_CALL = "incomingCall";
-    public static final String ACTION_INCOMING_CALL_CANCELLED = "incomingCallCancelled";
     private static final String TAG = "VoiceFCMService";
     @Override
     public void onCreate() {
@@ -35,7 +32,7 @@ public class VoiceCallFCMService extends FirebaseMessagingService {
     @Override
     public void onNewToken(String token) {
         super.onNewToken(token);
-        Intent intent = new Intent(ACTION_FCM_TOKEN_REFRESHED);
+        Intent intent = new Intent(Constants.ACTION_FCM_TOKEN);
         intent.putExtra("fcm_token", token);
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }

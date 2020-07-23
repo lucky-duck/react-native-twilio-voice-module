@@ -61,10 +61,6 @@ import java.util.Map;
 
 import javax.annotation.Nullable;
 
-import static com.twiliovoicemodule.fcm.VoiceCallFCMService.ACTION_FCM_TOKEN_REFRESHED;
-import static com.twiliovoicemodule.fcm.VoiceCallFCMService.ACTION_INCOMING_CALL;
-import static com.twiliovoicemodule.fcm.VoiceCallFCMService.ACTION_INCOMING_CALL_CANCELLED;
-
 public class TwilioVoiceModuleModule extends ReactContextBaseJavaModule implements LifecycleEventListener {
     private final ReactApplicationContext reactContext;
     private String accessToken = "";
@@ -152,6 +148,10 @@ public class TwilioVoiceModuleModule extends ReactContextBaseJavaModule implemen
         SharedPreferences preferences = reactContext.getSharedPreferences("TwilioModule", Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = preferences.edit();
         String currentIdentity = preferences.getString("identity", "testUser");
+        if (currentIdentity == "testUser" || currentIdentity != userId) {
+            editor.putString("identity", userId);
+            editor.commit();
+        }
         registerForCallInvites();
         this.accessToken = token;
         WritableMap params = Arguments.createMap();
@@ -418,7 +418,7 @@ public class TwilioVoiceModuleModule extends ReactContextBaseJavaModule implemen
     }
 
     private boolean checkPermissionForMicrophone() {
-        int resultMic = ActivityCompat.checkSelfPermission(reactContext, Manifest.permission.RECORD_AUDIO);
+        int resultMic = ContextCompat.checkSelfPermission(reactContext, Manifest.permission.RECORD_AUDIO);
         return resultMic == PackageManager.PERMISSION_GRANTED;
     }
 
@@ -435,7 +435,8 @@ public class TwilioVoiceModuleModule extends ReactContextBaseJavaModule implemen
     private void registerReceivers() {
         if (!receiversRegistered) {
             IntentFilter intentFilter = new IntentFilter();
-            intentFilter.addAction(ACTION_INCOMING_CALL);
+            intentFilter.addAction(Constants.ACTION_INCOMING_CALL);
+            intentFilter.addAction(Constants.ACTION_CANCEL_CALL);
             LocalBroadcastManager.getInstance(reactContext).registerReceiver(callReceiver, intentFilter);
             registerTokenRefreshedReceiver();
             receiversRegistered = true;
@@ -444,7 +445,7 @@ public class TwilioVoiceModuleModule extends ReactContextBaseJavaModule implemen
 
     private void registerTokenRefreshedReceiver() {
         IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(ACTION_FCM_TOKEN_REFRESHED);
+        intentFilter.addAction(Constants.ACTION_FCM_TOKEN);
         LocalBroadcastManager.getInstance(reactContext).registerReceiver(tokenReceiver, intentFilter);
     }
 
@@ -452,7 +453,7 @@ public class TwilioVoiceModuleModule extends ReactContextBaseJavaModule implemen
 
         @Override
         public void onReceive(Context context, Intent intent) {
-            if (intent.getAction() == ACTION_FCM_TOKEN_REFRESHED) {
+            if (intent.getAction() == Constants.ACTION_FCM_TOKEN) {
                 String fcmToken = intent.getStringExtra("fcm_token");
                 if (fcmToken != null) {
                     Voice.register(accessToken, Voice.RegistrationChannel.FCM, fcmToken, registrationListener);
@@ -465,7 +466,7 @@ public class TwilioVoiceModuleModule extends ReactContextBaseJavaModule implemen
 
         @Override
         public void onReceive(Context context, Intent intent) {
-            if (intent.getAction() == ACTION_INCOMING_CALL) {
+            if (intent.getAction() == Constants.ACTION_INCOMING_CALL) {
                 WritableMap params = Arguments.createMap();
                 Bundle extras = intent.getExtras();
                 incomingCall = extras.getParcelable("call_invite");
@@ -479,7 +480,7 @@ public class TwilioVoiceModuleModule extends ReactContextBaseJavaModule implemen
                     params.putString(key, customParams.get(key));
                 }
                 sendEvent(CALL_INCOMING, params);
-            } else if (intent.getAction() == ACTION_INCOMING_CALL_CANCELLED) {
+            } else if (intent.getAction() == Constants.ACTION_CANCEL_CALL) {
                 incomingCall = null;
                 WritableMap params = Arguments.createMap();
                 Bundle extras = intent.getExtras();
