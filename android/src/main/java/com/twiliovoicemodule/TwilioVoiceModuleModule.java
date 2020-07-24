@@ -77,7 +77,7 @@ public class TwilioVoiceModuleModule extends ReactContextBaseJavaModule implemen
     private static final String CONNECTION_DID_RECONNECT = "connectionDidReconnect";
     private static final String CALL_INCOMING = "callIncoming";
     private static final String CALL_INCOMING_CANCELLED = "callIncomingCancelled";
-    private static final int MIC_PERMISSION_REQUEST_CODE = 100;
+    private static final int MIC_PERMISSION_REQUEST_CODE = 1;
     private static final String TAG = "Anyone";
     private static final String TWILIO_ACCESS_TOKEN_SERVER_URL = "https://tomato-reindeer-1763.twil.io/access-token";
     private AlertDialog alertDialog;

@@ -65,15 +65,17 @@ public class IncomingCallNotificationService extends Service {
     private Notification createNotification(CallInvite callInvite, int notificationId, int channelImportance) {
 //        ActivityManager am = (ActivityManager)getApplicationContext().getSystemService(Context.ACTIVITY_SERVICE);
 //        ComponentName currentActivity = am.getRunningTasks(1).get(0).topActivity;
-        ReactInstanceManager mReactInstanceManager = ((ReactApplication) getApplication()).getReactNativeHost().getReactInstanceManager();
-        ReactContext context = mReactInstanceManager.getCurrentReactContext();
-        Intent intent = new Intent(context, IncomingCallNotificationService.class);
+//        ReactInstanceManager mReactInstanceManager = ((ReactApplication) getApplication()).getReactNativeHost().getReactInstanceManager();
+//        ReactContext context = mReactInstanceManager.getCurrentReactContext();
+        Intent intent = new Intent();
+        intent.setClassName("com.anyonemobile", "com.anyonemobile.MainActivity");
+//        Intent intent = new Intent(context, IncomingCallNotificationService.class);
         intent.setAction(Constants.ACTION_INCOMING_CALL_NOTIFICATION);
         intent.putExtra(Constants.INCOMING_CALL_NOTIFICATION_ID, notificationId);
         intent.putExtra(Constants.INCOMING_CALL_INVITE, callInvite);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent pendingIntent =
-                PendingIntent.getActivity(context, notificationId, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+                PendingIntent.getActivity(this, notificationId, intent, PendingIntent.FLAG_UPDATE_CURRENT);
         /*
          * Pass the notification id and call sid to use as an identifier to cancel the
          * notification later
@@ -90,7 +92,7 @@ public class IncomingCallNotificationService extends Service {
                     createChannel(channelImportance));
         } else {
             //noinspection deprecation
-            return new NotificationCompat.Builder(context)
+            return new NotificationCompat.Builder(this)
                     .setSmallIcon(R.drawable.ic_call_end_white_24dp)
                     .setContentTitle(getString(R.string.app_name))
                     .setContentText(callInvite.getFrom() + " is calling.")
@@ -116,22 +118,22 @@ public class IncomingCallNotificationService extends Service {
                                            int notificationId,
                                            String channelId) {
 
-        ReactInstanceManager mReactInstanceManager = ((ReactApplication) getApplication()).getReactNativeHost().getReactInstanceManager();
-        ReactContext context = mReactInstanceManager.getCurrentReactContext();
-        Intent rejectIntent = new Intent(context, IncomingCallNotificationService.class);
+//        ReactInstanceManager mReactInstanceManager = ((ReactApplication) getApplication()).getReactNativeHost().getReactInstanceManager();
+//        ReactContext context = mReactInstanceManager.getCurrentReactContext();
+        Intent rejectIntent = new Intent(getApplicationContext(), IncomingCallNotificationService.class);
         rejectIntent.setAction(Constants.ACTION_REJECT);
         rejectIntent.putExtra(Constants.INCOMING_CALL_INVITE, callInvite);
         rejectIntent.putExtra(Constants.INCOMING_CALL_NOTIFICATION_ID, notificationId);
-        PendingIntent piRejectIntent = PendingIntent.getService(context, 0, rejectIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent piRejectIntent = PendingIntent.getService(getApplicationContext(), 0, rejectIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
-        Intent acceptIntent = new Intent(context, IncomingCallNotificationService.class);
+        Intent acceptIntent = new Intent(getApplicationContext(), IncomingCallNotificationService.class);
         acceptIntent.setAction(Constants.ACTION_ACCEPT);
         acceptIntent.putExtra(Constants.INCOMING_CALL_INVITE, callInvite);
         acceptIntent.putExtra(Constants.INCOMING_CALL_NOTIFICATION_ID, notificationId);
-        PendingIntent piAcceptIntent = PendingIntent.getService(context, 0, acceptIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent piAcceptIntent = PendingIntent.getService(getApplicationContext(), 0, acceptIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
         Notification.Builder builder =
-                new Notification.Builder(context, channelId)
+                new Notification.Builder(getApplicationContext(), channelId)
                         .setSmallIcon(R.drawable.ic_call_end_white_24dp)
                         .setContentTitle(getString(R.string.app_name))
                         .setContentText(text)
@@ -170,10 +172,10 @@ public class IncomingCallNotificationService extends Service {
         if (isAppVisible()) {
             Log.i(TAG, "accept - app is visible.");
         }
-        ActivityManager am = (ActivityManager)getApplicationContext().getSystemService(Context.ACTIVITY_SERVICE);
-        ComponentName currentActivity = am.getRunningTasks(1).get(0).topActivity;
-        ReactInstanceManager mReactInstanceManager = ((ReactApplication) getApplication()).getReactNativeHost().getReactInstanceManager();
-        ReactContext context = mReactInstanceManager.getCurrentReactContext();
+//        ActivityManager am = (ActivityManager)getApplicationContext().getSystemService(Context.ACTIVITY_SERVICE);
+//        ComponentName currentActivity = am.getRunningTasks(1).get(0).topActivity;
+//        ReactInstanceManager mReactInstanceManager = ((ReactApplication) getApplication()).getReactNativeHost().getReactInstanceManager();
+//        ReactContext context = mReactInstanceManager.getCurrentReactContext();
         Intent activeCallIntent = new Intent();
         activeCallIntent.setClassName("com.anyonemobile", "com.anyonemobile.MainActivity");
 //        Intent activeCallIntent = new Intent(context, MainActivity.class);
@@ -182,7 +184,7 @@ public class IncomingCallNotificationService extends Service {
         activeCallIntent.putExtra(Constants.INCOMING_CALL_INVITE, callInvite);
         activeCallIntent.putExtra(Constants.INCOMING_CALL_NOTIFICATION_ID, notificationId);
         activeCallIntent.setAction(Constants.ACTION_ACCEPT);
-        context.startActivity(activeCallIntent);
+        startActivity(activeCallIntent);
     }
 
     private void reject(CallInvite callInvite) {
@@ -214,7 +216,7 @@ public class IncomingCallNotificationService extends Service {
     private void setCallInProgressNotification(CallInvite callInvite, int notificationId) {
         if (isAppVisible()) {
             Log.i(TAG, "setCallInProgressNotification - app is visible.");
-//            startForeground(notificationId, createNotification(callInvite, notificationId, NotificationManager.IMPORTANCE_LOW));
+            startForeground(notificationId, createNotification(callInvite, notificationId, NotificationManager.IMPORTANCE_LOW));
         } else {
             Log.i(TAG, "setCallInProgressNotification - app is NOT visible.");
             startForeground(notificationId, createNotification(callInvite, notificationId, NotificationManager.IMPORTANCE_HIGH));
@@ -228,11 +230,20 @@ public class IncomingCallNotificationService extends Service {
         if (Build.VERSION.SDK_INT >= 29 && !isAppVisible()) {
             return;
         }
+        Intent intent = new Intent();
+        intent.setClassName("com.anyonemobile", "com.anyonemobile.MainActivity");
+        intent.setAction(Constants.ACTION_INCOMING_CALL);
+        intent.putExtra(Constants.INCOMING_CALL_NOTIFICATION_ID, notificationId);
+        intent.putExtra(Constants.INCOMING_CALL_INVITE, callInvite);
+        intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        this.startActivity(intent);
+
         Intent i = new Intent(Constants.ACTION_INCOMING_CALL);
         i.putExtra("call_invite", callInvite);
-        ReactInstanceManager mReactInstanceManager = ((ReactApplication) getApplication()).getReactNativeHost().getReactInstanceManager();
-        ReactContext context = mReactInstanceManager.getCurrentReactContext();
-        LocalBroadcastManager.getInstance(context).sendBroadcast(i);
+//        ReactInstanceManager mReactInstanceManager = ((ReactApplication) getApplication()).getReactNativeHost().getReactInstanceManager();
+//        ReactContext context = mReactInstanceManager.getCurrentReactContext();
+        LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(i);
 //        ActivityManager am = (ActivityManager)getApplicationContext().getSystemService(Context.ACTIVITY_SERVICE);
 //        ComponentName currentActivity = am.getRunningTasks(1).get(0).topActivity;
 //        Intent intent = new Intent(this, currentActivity.getClass());
