@@ -184,26 +184,27 @@ public class IncomingCallNotificationService extends Service {
         activeCallIntent.putExtra(Constants.INCOMING_CALL_INVITE, callInvite);
         activeCallIntent.putExtra(Constants.INCOMING_CALL_NOTIFICATION_ID, notificationId);
         activeCallIntent.setAction(Constants.ACTION_ACCEPT);
-        startActivity(activeCallIntent);
+//        startActivity(activeCallIntent);
+//        this.startActivity(activeCallIntent);
     }
 
     private void reject(CallInvite callInvite) {
         endForeground();
-        ReactInstanceManager mReactInstanceManager = ((ReactApplication) getApplication()).getReactNativeHost().getReactInstanceManager();
-        ReactContext context = mReactInstanceManager.getCurrentReactContext();
-        callInvite.reject(context);
+//        ReactInstanceManager mReactInstanceManager = ((ReactApplication) getApplication()).getReactNativeHost().getReactInstanceManager();
+//        ReactContext context = mReactInstanceManager.getCurrentReactContext();
+        callInvite.reject(getApplicationContext());
     }
 
     private void handleCancelledCall(Intent intent) {
         endForeground();
-        ReactInstanceManager mReactInstanceManager = ((ReactApplication) getApplication()).getReactNativeHost().getReactInstanceManager();
-        ReactContext context = mReactInstanceManager.getCurrentReactContext();
-        LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
+//        ReactInstanceManager mReactInstanceManager = ((ReactApplication) getApplication()).getReactNativeHost().getReactInstanceManager();
+//        ReactContext context = mReactInstanceManager.getCurrentReactContext();
+        LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intent);
     }
 
     private void handleIncomingCall(CallInvite callInvite, int notificationId) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            setCallInProgressNotification(callInvite, notificationId);
+//            setCallInProgressNotification(callInvite, notificationId);
         }
         sendCallInviteToActivity(callInvite, notificationId);
     }
@@ -243,7 +244,13 @@ public class IncomingCallNotificationService extends Service {
         i.putExtra("call_invite", callInvite);
 //        ReactInstanceManager mReactInstanceManager = ((ReactApplication) getApplication()).getReactNativeHost().getReactInstanceManager();
 //        ReactContext context = mReactInstanceManager.getCurrentReactContext();
-        LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(i);
+        new android.os.Handler().postDelayed(
+                new Runnable() {
+                    public void run() {
+                        LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(i);
+                    }
+                },
+                3000);
 //        ActivityManager am = (ActivityManager)getApplicationContext().getSystemService(Context.ACTIVITY_SERVICE);
 //        ComponentName currentActivity = am.getRunningTasks(1).get(0).topActivity;
 //        Intent intent = new Intent(this, currentActivity.getClass());
