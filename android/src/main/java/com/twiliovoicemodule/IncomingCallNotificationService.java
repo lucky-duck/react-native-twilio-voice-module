@@ -210,7 +210,9 @@ public class IncomingCallNotificationService extends Service {
     }
 
     private void endForeground() {
-        stopForeground(true);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ECLAIR) {
+            stopForeground(true);
+        }
     }
 
     @TargetApi(Build.VERSION_CODES.O)
@@ -228,9 +230,9 @@ public class IncomingCallNotificationService extends Service {
      * Send the CallInvite to the VoiceActivity. Start the activity if it is not running already.
      */
     private void sendCallInviteToActivity(CallInvite callInvite, int notificationId) {
-        if (Build.VERSION.SDK_INT >= 29 && !isAppVisible()) {
-            return;
-        }
+//        if (Build.VERSION.SDK_INT >= 29 && !isAppVisible()) {
+//            return;
+//        }
         Intent intent = new Intent();
         intent.setClassName("com.anyonemobile", "com.anyonemobile.MainActivity");
         intent.setAction(Constants.ACTION_INCOMING_CALL);
@@ -250,7 +252,7 @@ public class IncomingCallNotificationService extends Service {
                         LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(i);
                     }
                 },
-                3000);
+                isAppVisible() ? 1000 : 3000);
 //        ActivityManager am = (ActivityManager)getApplicationContext().getSystemService(Context.ACTIVITY_SERVICE);
 //        ComponentName currentActivity = am.getRunningTasks(1).get(0).topActivity;
 //        Intent intent = new Intent(this, currentActivity.getClass());

@@ -566,7 +566,7 @@ public class TwilioVoiceModuleModule extends ReactContextBaseJavaModule implemen
         String currentIdentity = preferences.getString("identity", "testUser");
 
         Log.d(TAG, "Android Twilio Identity " + currentIdentity);
-        Ion.with(reactContext).load(TWILIO_ACCESS_TOKEN_SERVER_URL + "?identity=" + currentIdentity)
+        Ion.with(reactContext).load(TWILIO_ACCESS_TOKEN_SERVER_URL + "?identity=" + currentIdentity + "_android")
                 .asString()
                 .setCallback((e, accessToken) -> {
                     if (e == null) {

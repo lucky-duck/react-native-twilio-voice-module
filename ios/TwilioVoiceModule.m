@@ -91,7 +91,7 @@ RCT_EXPORT_MODULE()
 }
 - (void)fetchAccessToken {
     NSString *kIdentity = [[NSUserDefaults standardUserDefaults] stringForKey:@"kIdentity"];
-    NSString *accessTokenEndpointWithIdentity = [NSString stringWithFormat:@"%@?identity=%@", kAccessTokenEndpoint, [kIdentity length] == 0 ? @"testidentity" : kIdentity];
+    NSString *accessTokenEndpointWithIdentity = [NSString stringWithFormat:@"%@?identity=%@", kAccessTokenEndpoint, [kIdentity length] == 0 ? @"testidentity" : [kIdentity stringByAppendingString: @"_ios"]];
     NSString *accessTokenURLString = [kYourServerBaseURLString stringByAppendingString:accessTokenEndpointWithIdentity];
 
     NSString *accessToken = [NSString stringWithContentsOfURL:[NSURL URLWithString:accessTokenURLString]
@@ -496,7 +496,7 @@ RCT_EXPORT_METHOD(reject)
 
 - (NSString *)fetchAccessTokenFromIdentity {
     NSString *kIdentity = [[NSUserDefaults standardUserDefaults] stringForKey:@"kIdentity"];
-    NSString *accessTokenEndpointWithIdentity = [NSString stringWithFormat:@"%@?identity=%@", kAccessTokenEndpoint, [kIdentity length] == 0 ? @"testidentity" : kIdentity];
+    NSString *accessTokenEndpointWithIdentity = [NSString stringWithFormat:@"%@?identity=%@", kAccessTokenEndpoint, [kIdentity length] == 0 ? @"testidentity" : [kIdentity stringByAppendingString: @"_ios"]];
     NSString *accessTokenURLString = [kYourServerBaseURLString stringByAppendingString:accessTokenEndpointWithIdentity];
 
     NSString *accessToken = [NSString stringWithContentsOfURL:[NSURL URLWithString:accessTokenURLString]
