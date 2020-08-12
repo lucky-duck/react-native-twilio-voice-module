@@ -26,6 +26,8 @@ import com.facebook.react.ReactInstanceManager;
 import com.facebook.react.bridge.ReactContext;
 import com.twilio.voice.CallInvite;
 
+import java.util.Map;
+
 public class IncomingCallNotificationService extends Service {
 
     private static final String TAG = IncomingCallNotificationService.class.getSimpleName();
@@ -82,9 +84,9 @@ public class IncomingCallNotificationService extends Service {
          */
         Bundle extras = new Bundle();
         extras.putString(Constants.CALL_SID_KEY, callInvite.getCallSid());
-
+        Map<String, String> customParameters = callInvite.getCustomParameters();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            return buildNotification(callInvite.getFrom() + " is calling.",
+            return buildNotification(customParameters.getOrDefault("fromName", "Someone") + " is calling about " + customParameters.getOrDefault("topicTitle", "something"),
                     pendingIntent,
                     extras,
                     callInvite,
@@ -92,10 +94,11 @@ public class IncomingCallNotificationService extends Service {
                     createChannel(channelImportance));
         } else {
             //noinspection deprecation
+
             return new NotificationCompat.Builder(this)
                     .setSmallIcon(R.drawable.ic_call_end_white_24dp)
                     .setContentTitle(getString(R.string.app_name))
-                    .setContentText(callInvite.getFrom() + " is calling.")
+                    .setContentText((customParameters.containsKey("fromName") ? customParameters.get("fromName") : "Someone") + " is calling about " + (customParameters.containsKey("topicTitle") ? customParameters.get("topicTitle") : "something"))
                     .setAutoCancel(true)
                     .setExtras(extras)
                     .setContentIntent(pendingIntent)
@@ -140,9 +143,7 @@ public class IncomingCallNotificationService extends Service {
                         .setCategory(Notification.CATEGORY_CALL)
                         .setFullScreenIntent(pendingIntent, true)
                         .setExtras(extras)
-                        .setAutoCancel(true)
-                        .addAction(android.R.drawable.ic_menu_delete, getString(R.string.decline), piRejectIntent)
-                        .addAction(android.R.drawable.ic_menu_call, getString(R.string.answer), piAcceptIntent)
+                        .setAutoCancel(false)
                         .setFullScreenIntent(pendingIntent, true);
 
         return builder.build();
@@ -184,7 +185,7 @@ public class IncomingCallNotificationService extends Service {
         activeCallIntent.putExtra(Constants.INCOMING_CALL_INVITE, callInvite);
         activeCallIntent.putExtra(Constants.INCOMING_CALL_NOTIFICATION_ID, notificationId);
         activeCallIntent.setAction(Constants.ACTION_ACCEPT);
-//        startActivity(activeCallIntent);
+        startActivity(activeCallIntent);
 //        this.startActivity(activeCallIntent);
     }
 
@@ -204,15 +205,15 @@ public class IncomingCallNotificationService extends Service {
 
     private void handleIncomingCall(CallInvite callInvite, int notificationId) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-//            setCallInProgressNotification(callInvite, notificationId);
+            setCallInProgressNotification(callInvite, notificationId);
         }
         sendCallInviteToActivity(callInvite, notificationId);
     }
 
     private void endForeground() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ECLAIR) {
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ECLAIR) {
             stopForeground(true);
-        }
+//        }
     }
 
     @TargetApi(Build.VERSION_CODES.O)
@@ -252,7 +253,7 @@ public class IncomingCallNotificationService extends Service {
                         LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(i);
                     }
                 },
-                isAppVisible() ? 1000 : 3000);
+                3000);
 //        ActivityManager am = (ActivityManager)getApplicationContext().getSystemService(Context.ACTIVITY_SERVICE);
 //        ComponentName currentActivity = am.getRunningTasks(1).get(0).topActivity;
 //        Intent intent = new Intent(this, currentActivity.getClass());
