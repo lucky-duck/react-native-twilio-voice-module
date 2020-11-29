@@ -74,7 +74,11 @@ public class IncomingCallNotificationService extends Service {
 //        Intent intent = new Intent(context, IncomingCallNotificationService.class);
         intent.setAction(Constants.ACTION_INCOMING_CALL_NOTIFICATION);
         intent.putExtra(Constants.INCOMING_CALL_NOTIFICATION_ID, notificationId);
-        intent.putExtra(Constants.INCOMING_CALL_INVITE, callInvite);
+        // intent.putExtra(Constants.INCOMING_CALL_INVITE, callInvite);
+        intent.putExtra("call_sid", callInvite.getCallSid());
+        intent.putExtra("call_from", callInvite.getFrom());
+        intent.putExtra("call_to", callInvite.getTo());
+        
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent pendingIntent =
                 PendingIntent.getActivity(this, notificationId, intent, PendingIntent.FLAG_UPDATE_CURRENT);
@@ -125,13 +129,21 @@ public class IncomingCallNotificationService extends Service {
 //        ReactContext context = mReactInstanceManager.getCurrentReactContext();
         Intent rejectIntent = new Intent(getApplicationContext(), IncomingCallNotificationService.class);
         rejectIntent.setAction(Constants.ACTION_REJECT);
-        rejectIntent.putExtra(Constants.INCOMING_CALL_INVITE, callInvite);
+        // rejectIntent.putExtra(Constants.INCOMING_CALL_INVITE, callInvite);
+        rejectIntent.putExtra("call_sid", callInvite.getCallSid());
+        rejectIntent.putExtra("call_from", callInvite.getFrom());
+        rejectIntent.putExtra("call_to", callInvite.getTo());
+
         rejectIntent.putExtra(Constants.INCOMING_CALL_NOTIFICATION_ID, notificationId);
         PendingIntent piRejectIntent = PendingIntent.getService(getApplicationContext(), 0, rejectIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
         Intent acceptIntent = new Intent(getApplicationContext(), IncomingCallNotificationService.class);
         acceptIntent.setAction(Constants.ACTION_ACCEPT);
-        acceptIntent.putExtra(Constants.INCOMING_CALL_INVITE, callInvite);
+        // acceptIntent.putExtra(Constants.INCOMING_CALL_INVITE, callInvite);
+        acceptIntent.putExtra("call_sid", callInvite.getCallSid());
+        acceptIntent.putExtra("call_from", callInvite.getFrom());
+        acceptIntent.putExtra("call_to", callInvite.getTo());
+
         acceptIntent.putExtra(Constants.INCOMING_CALL_NOTIFICATION_ID, notificationId);
         PendingIntent piAcceptIntent = PendingIntent.getService(getApplicationContext(), 0, acceptIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
@@ -182,7 +194,10 @@ public class IncomingCallNotificationService extends Service {
 //        Intent activeCallIntent = new Intent(context, MainActivity.class);
         activeCallIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
         activeCallIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        activeCallIntent.putExtra(Constants.INCOMING_CALL_INVITE, callInvite);
+        //activeCallIntent.putExtra(Constants.INCOMING_CALL_INVITE, callInvite);
+        activeCallIntent.putExtra("call_sid", callInvite.getCallSid());
+        activeCallIntent.putExtra("call_from", callInvite.getFrom());
+        activeCallIntent.putExtra("call_to", callInvite.getTo());
         activeCallIntent.putExtra(Constants.INCOMING_CALL_NOTIFICATION_ID, notificationId);
         activeCallIntent.setAction(Constants.ACTION_ACCEPT);
         startActivity(activeCallIntent);
@@ -204,6 +219,10 @@ public class IncomingCallNotificationService extends Service {
     }
 
     private void handleIncomingCall(CallInvite callInvite, int notificationId) {
+
+        if (callInvite == null)
+            return;
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             setCallInProgressNotification(callInvite, notificationId);
         }
@@ -218,6 +237,10 @@ public class IncomingCallNotificationService extends Service {
 
     @TargetApi(Build.VERSION_CODES.O)
     private void setCallInProgressNotification(CallInvite callInvite, int notificationId) {
+
+        if (callInvite == null)
+            return;
+
         if (isAppVisible()) {
             Log.i(TAG, "setCallInProgressNotification - app is visible.");
             startForeground(notificationId, createNotification(callInvite, notificationId, NotificationManager.IMPORTANCE_LOW));
@@ -238,7 +261,12 @@ public class IncomingCallNotificationService extends Service {
         intent.setClassName("com.anyonemobile", "com.anyonemobile.MainActivity");
         intent.setAction(Constants.ACTION_INCOMING_CALL);
         intent.putExtra(Constants.INCOMING_CALL_NOTIFICATION_ID, notificationId);
-        intent.putExtra(Constants.INCOMING_CALL_INVITE, callInvite);
+        // intent.putExtra(Constants.INCOMING_CALL_INVITE, callInvite);
+
+        intent.putExtra("call_sid", callInvite.getCallSid());
+        intent.putExtra("call_from", callInvite.getFrom());
+        intent.putExtra("call_to", callInvite.getTo());
+
         intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         this.startActivity(intent);

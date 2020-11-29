@@ -484,10 +484,12 @@ public class TwilioVoiceModuleModule extends ReactContextBaseJavaModule implemen
                 incomingCall = null;
                 WritableMap params = Arguments.createMap();
                 Bundle extras = intent.getExtras();
-                CancelledCallInvite cancelledCallInvite = extras.getParcelable("cancelled_call_invite");
-                params.putString("call_sid", cancelledCallInvite.getCallSid());
-                params.putString("call_from", cancelledCallInvite.getFrom());
-                params.putString("call_to", cancelledCallInvite.getTo());
+                CancelledCallInvite cancelledCallInvite = extras.getParcelable(Constants.CANCELLED_CALL_INVITE);
+                if (cancelledCallInvite != null) {
+                    params.putString("call_sid", cancelledCallInvite.getCallSid());
+                    params.putString("call_from", cancelledCallInvite.getFrom());
+                    params.putString("call_to", cancelledCallInvite.getTo());
+                }
                 sendEvent(CALL_INCOMING_CANCELLED, params);
             }
         }
@@ -520,7 +522,11 @@ public class TwilioVoiceModuleModule extends ReactContextBaseJavaModule implemen
             Log.d(TAG, "Clicked accept");
             Intent acceptIntent = new Intent(reactContext, IncomingCallNotificationService.class);
             acceptIntent.setAction(Constants.ACTION_ACCEPT);
-            acceptIntent.putExtra(Constants.INCOMING_CALL_INVITE, incomingCall);
+            // acceptIntent.putExtra(Constants.INCOMING_CALL_INVITE, incomingCall);
+            acceptIntent.putExtra("call_sid", incomingCall.getCallSid());
+            acceptIntent.putExtra("call_from", incomingCall.getFrom());
+            acceptIntent.putExtra("call_to", incomingCall.getTo());
+
             acceptIntent.putExtra(Constants.INCOMING_CALL_NOTIFICATION_ID, activeCallNotificationId);
             Log.d(TAG, "Clicked accept startService");
             reactContext.startService(acceptIntent);
@@ -532,7 +538,10 @@ public class TwilioVoiceModuleModule extends ReactContextBaseJavaModule implemen
             if (incomingCall != null) {
                 Intent intent = new Intent(reactContext, IncomingCallNotificationService.class);
                 intent.setAction(Constants.ACTION_REJECT);
-                intent.putExtra(Constants.INCOMING_CALL_INVITE, incomingCall);
+                // intent.putExtra(Constants.INCOMING_CALL_INVITE, incomingCall);
+                intent.putExtra("call_sid", incomingCall.getCallSid());
+                intent.putExtra("call_from", incomingCall.getFrom());
+                intent.putExtra("call_to", incomingCall.getTo());
                 reactContext.startService(intent);
             }
             if (alertDialog != null && alertDialog.isShowing()) {
