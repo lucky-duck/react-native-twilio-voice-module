@@ -19,11 +19,13 @@ import com.twilio.voice.MessageListener;
 import com.twilio.voice.Voice;
 import com.twiliovoicemodule.Constants;
 import com.twiliovoicemodule.IncomingCallNotificationService;
+import io.intercom.android.sdk.push.IntercomPushClient;
 
 import java.util.Map;
 
 public class VoiceCallFCMService extends FirebaseMessagingService {
     private static final String TAG = "VoiceFCMService";
+    private final IntercomPushClient intercomPushClient = new IntercomPushClient();
     @Override
     public void onCreate() {
         super.onCreate();
@@ -32,6 +34,7 @@ public class VoiceCallFCMService extends FirebaseMessagingService {
     @Override
     public void onNewToken(String token) {
         super.onNewToken(token);
+        intercomPushClient.sendTokenToIntercom(getApplication(), token);
         Intent intent = new Intent(Constants.ACTION_FCM_TOKEN);
         intent.putExtra("fcm_token", token);
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
@@ -45,22 +48,28 @@ public class VoiceCallFCMService extends FirebaseMessagingService {
 
         // Check if message contains a data payload.
         if (remoteMessage.getData().size() > 0) {
-            boolean valid = Voice.handleMessage(this, remoteMessage.getData(), new MessageListener() {
-                @Override
-                public void onCallInvite(@NonNull CallInvite callInvite) {
-                    final int notificationId = (int) System.currentTimeMillis();
-                    handleInvite(callInvite, notificationId);
-                }
+            Map message = remoteMessage.getData();
+            if (intercomPushClient.isIntercomPush(message)) {
+                Log.d(TAG, "Intercom message received");
+                intercomPushClient.handlePush(getApplication(), message);
+            } else {
+                boolean valid = Voice.handleMessage(this, remoteMessage.getData(), new MessageListener() {
+                    @Override
+                    public void onCallInvite(@NonNull CallInvite callInvite) {
+                        final int notificationId = (int) System.currentTimeMillis();
+                        handleInvite(callInvite, notificationId);
+                    }
 
-                @Override
-                public void onCancelledCallInvite(@NonNull CancelledCallInvite cancelledCallInvite, @Nullable CallException callException) {
-                    handleCanceledCallInvite(cancelledCallInvite);
-                }
-            });
+                    @Override
+                    public void onCancelledCallInvite(@NonNull CancelledCallInvite cancelledCallInvite, @Nullable CallException callException) {
+                        handleCanceledCallInvite(cancelledCallInvite);
+                    }
+                });
 
-            if (!valid) {
-                Log.e(TAG, "The message was not a valid Twilio Voice SDK payload: " +
-                        remoteMessage.getData());
+                if (!valid) {
+                    Log.e(TAG, "The message was not a valid Twilio Voice SDK payload: " +
+                            remoteMessage.getData());
+                }
             }
         }
 //        if (remoteMessage.getData().size() > 0) {

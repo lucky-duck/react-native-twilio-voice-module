@@ -65,6 +65,7 @@ dependencies {
     implementation 'com.koushikdutta.ion:ion:2.1.8'
     implementation 'com.google.firebase:firebase-messaging:17.+'
     implementation 'androidx.lifecycle:lifecycle-extensions:2.1.0'
+    implementation 'io.intercom.android:intercom-sdk-fcm:7.+'
     implementation "com.facebook.react:react-native:${safeExtGet('reactnativeVersion', '+')}"
 }
 
@@ -145,3 +146,5 @@ afterEvaluate { project ->
         }
     }
 }
+
+apply plugin: 'com.google.gms.google-services'
