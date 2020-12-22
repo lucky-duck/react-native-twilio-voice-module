@@ -74,7 +74,7 @@ public class IncomingCallNotificationService extends Service {
 //        Intent intent = new Intent(context, IncomingCallNotificationService.class);
         intent.setAction(Constants.ACTION_INCOMING_CALL_NOTIFICATION);
         intent.putExtra(Constants.INCOMING_CALL_NOTIFICATION_ID, notificationId);
-        // intent.putExtra(Constants.INCOMING_CALL_INVITE, callInvite);
+        intent.putExtra(Constants.INCOMING_CALL_INVITE, callInvite);
         intent.putExtra("call_sid", callInvite.getCallSid());
         intent.putExtra("call_from", callInvite.getFrom());
         intent.putExtra("call_to", callInvite.getTo());
@@ -130,22 +130,24 @@ public class IncomingCallNotificationService extends Service {
         Intent rejectIntent = new Intent(getApplicationContext(), IncomingCallNotificationService.class);
         rejectIntent.setAction(Constants.ACTION_REJECT);
         // rejectIntent.putExtra(Constants.INCOMING_CALL_INVITE, callInvite);
-        rejectIntent.putExtra("call_sid", callInvite.getCallSid());
-        rejectIntent.putExtra("call_from", callInvite.getFrom());
-        rejectIntent.putExtra("call_to", callInvite.getTo());
+//        rejectIntent.putExtra("call_sid", callInvite.getCallSid());
+//        rejectIntent.putExtra("call_from", callInvite.getFrom());
+//        rejectIntent.putExtra("call_to", callInvite.getTo());
+        rejectIntent.putExtra(Constants.INCOMING_CALL_INVITE, callInvite);
 
         rejectIntent.putExtra(Constants.INCOMING_CALL_NOTIFICATION_ID, notificationId);
-        PendingIntent piRejectIntent = PendingIntent.getService(getApplicationContext(), 0, rejectIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent piRejectIntent = PendingIntent.getService(getApplicationContext(), 1201, rejectIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
         Intent acceptIntent = new Intent(getApplicationContext(), IncomingCallNotificationService.class);
         acceptIntent.setAction(Constants.ACTION_ACCEPT);
         // acceptIntent.putExtra(Constants.INCOMING_CALL_INVITE, callInvite);
-        acceptIntent.putExtra("call_sid", callInvite.getCallSid());
-        acceptIntent.putExtra("call_from", callInvite.getFrom());
-        acceptIntent.putExtra("call_to", callInvite.getTo());
+//        acceptIntent.putExtra("call_sid", callInvite.getCallSid());
+//        acceptIntent.putExtra("call_from", callInvite.getFrom());
+//        acceptIntent.putExtra("call_to", callInvite.getTo());
+        acceptIntent.putExtra(Constants.INCOMING_CALL_INVITE, callInvite);
 
         acceptIntent.putExtra(Constants.INCOMING_CALL_NOTIFICATION_ID, notificationId);
-        PendingIntent piAcceptIntent = PendingIntent.getService(getApplicationContext(), 0, acceptIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent piAcceptIntent = PendingIntent.getService(getApplicationContext(), 1200, acceptIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
         Notification.Builder builder =
                 new Notification.Builder(getApplicationContext(), channelId)
@@ -155,8 +157,8 @@ public class IncomingCallNotificationService extends Service {
                         .setCategory(Notification.CATEGORY_CALL)
                         .setFullScreenIntent(pendingIntent, true)
                         .setExtras(extras)
-                        .addAction(R.drawable.ic_call_green, "Accept", acceptIntent)
-                        .addAction(R.drawable.ic_cancel_sexy, "Decline", rejectIntent)
+                        .addAction(R.drawable.ic_call_green, "Accept", piAcceptIntent)
+                        .addAction(R.drawable.ic_cancel_sexy, "Decline", piRejectIntent)
                         .setAutoCancel(false)
                         .setFullScreenIntent(pendingIntent, true);
 
@@ -284,6 +286,7 @@ public class IncomingCallNotificationService extends Service {
                     }
                 },
                 3000);
+
 //        ActivityManager am = (ActivityManager)getApplicationContext().getSystemService(Context.ACTIVITY_SERVICE);
 //        ComponentName currentActivity = am.getRunningTasks(1).get(0).topActivity;
 //        Intent intent = new Intent(this, currentActivity.getClass());
