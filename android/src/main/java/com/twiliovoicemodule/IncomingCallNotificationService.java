@@ -155,6 +155,8 @@ public class IncomingCallNotificationService extends Service {
                         .setCategory(Notification.CATEGORY_CALL)
                         .setFullScreenIntent(pendingIntent, true)
                         .setExtras(extras)
+                        .addAction(R.drawable.ic_call_green, "Accept", acceptIntent)
+                        .addAction(R.drawable.ic_cancel_sexy, "Decline", rejectIntent)
                         .setAutoCancel(false)
                         .setFullScreenIntent(pendingIntent, true);
 
