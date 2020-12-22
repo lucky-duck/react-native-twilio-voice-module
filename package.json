@@ -5,32 +5,35 @@
       "/Volumes/Work/ReactNative/Anyone/AnyoneMobile"
     ]
   ],
-  "_from": "github:lucky-duck/react-native-twilio-voice-module#1.0.2",
-  "_id": "react-native-twilio-voice-module@github:lucky-duck/react-native-twilio-voice-module#7366be1a5c44f7041ba25681621456817937c4ad",
+  "_from": "github:lucky-duck/react-native-twilio-voice-module#1.0.7",
+  "_id": "react-native-twilio-voice-module@1.0.12",
   "_inBundle": false,
   "_integrity": "",
   "_location": "/react-native-twilio-voice-module",
   "_phantomChildren": {},
   "_requested": {
     "type": "git",
-    "raw": "github:lucky-duck/react-native-twilio-voice-module#1.0.2",
-    "rawSpec": "github:lucky-duck/react-native-twilio-voice-module#1.0.2",
-    "saveSpec": "github:lucky-duck/react-native-twilio-voice-module#1.0.2",
+    "raw": "react-native-twilio-voice-module@github:lucky-duck/react-native-twilio-voice-module#1.0.7",
+    "name": "react-native-twilio-voice-module",
+    "escapedName": "react-native-twilio-voice-module",
+    "rawSpec": "github:lucky-duck/react-native-twilio-voice-module#1.0.7",
+    "saveSpec": "github:lucky-duck/react-native-twilio-voice-module#1.0.7",
     "fetchSpec": null,
-    "gitCommittish": "1.0.2"
+    "gitCommittish": "1.0.7"
   },
   "_requiredBy": [
     "/"
   ],
-  "_resolved": "github:lucky-duck/react-native-twilio-voice-module#7366be1a5c44f7041ba25681621456817937c4ad",
-  "_spec": "github:lucky-duck/react-native-twilio-voice-module#1.0.2",
-  "_where": "/Volumes/Work/ReactNative/Anyone/AnyoneMobile",
+  "_resolved": "github:lucky-duck/react-native-twilio-voice-module#bd0879caea04294732dbca5680bcd9fc9e5b542c",
+  "_spec": "react-native-twilio-voice-module@github:lucky-duck/react-native-twilio-voice-module#1.0.7",
+  "_where": "/Volumes/Work/LuckyDuck/AnyoneMobile",
   "author": {
     "name": "HaiLin Yin"
   },
   "bugs": {
     "url": "https://github.com/danielsGit/react-native-twilio-voice-module/issues"
   },
+  "bundleDependencies": false,
   "deprecated": false,
   "description": "Twilio programmable voice module for react native",
   "directories": {

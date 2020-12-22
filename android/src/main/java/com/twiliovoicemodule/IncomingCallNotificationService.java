@@ -74,7 +74,7 @@ public class IncomingCallNotificationService extends Service {
 //        Intent intent = new Intent(context, IncomingCallNotificationService.class);
         intent.setAction(Constants.ACTION_INCOMING_CALL_NOTIFICATION);
         intent.putExtra(Constants.INCOMING_CALL_NOTIFICATION_ID, notificationId);
-        intent.putExtra(Constants.INCOMING_CALL_INVITE, callInvite);
+//        intent.putExtra(Constants.INCOMING_CALL_INVITE, callInvite);
         intent.putExtra("call_sid", callInvite.getCallSid());
         intent.putExtra("call_from", callInvite.getFrom());
         intent.putExtra("call_to", callInvite.getTo());
@@ -159,7 +159,7 @@ public class IncomingCallNotificationService extends Service {
                         .setExtras(extras)
                         .addAction(R.drawable.ic_call_green, "Accept", piAcceptIntent)
                         .addAction(R.drawable.ic_cancel_sexy, "Decline", piRejectIntent)
-                        .setAutoCancel(false)
+                        .setAutoCancel(true)
                         .setFullScreenIntent(pendingIntent, true);
 
         return builder.build();
